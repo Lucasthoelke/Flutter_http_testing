@@ -3,7 +3,6 @@
  * - Clean up Code
  * - Document more code
  * - Make README
- * - Add Settings page
  */
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -56,6 +55,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<String> debug_body;
   String url = 'https://raw.githubusercontent.com/Lucasthoelke/public-json-dev-requests/master/providers.json';
+  String defaultUrl = 'https://raw.githubusercontent.com/Lucasthoelke/public-json-dev-requests/master/providers.json';
+  final settingsTextFieldController = TextEditingController();
 
   @override
   void initState() {
@@ -64,6 +65,58 @@ class _MyHomePageState extends State<MyHomePage> {
     InternetRetriever ir = InternetRetriever(url);
     debug_body = ir.handleData();
   }
+
+  void _pushSettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void> (
+        builder: (BuildContext context) {
+          return Scaffold(
+           appBar: AppBar(
+             title: Text('Settings'),
+           ),
+            body: Container(
+              child: Column(
+                children: <Widget>[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Container(
+                        child: TextField(
+                          decoration: InputDecoration(hintText: 'URL'),
+                          controller: settingsTextFieldController,
+                        ),
+                        width: MediaQuery.of(context).size.width * 0.75,
+                      )
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: <Widget>[
+                      RaisedButton(
+                        onPressed: _handleSettingsUrlSet,
+                        child: Text('set', style: TextStyle(fontSize: 20)),
+                      ),
+                      RaisedButton(
+                        onPressed: _handleSettingsUrlReset,
+                        child: Text('reset', style: TextStyle(fontSize: 20)),
+                      )
+                    ],
+                  )
+                ]
+              ),
+            )
+          );
+        }
+      )
+    );
+  }
+
+  void _handleSettingsUrlReset() {
+    url = defaultUrl;
+    settingsTextFieldController.text = defaultUrl;
+  }
+
+  void _handleSettingsUrlSet() => url = settingsTextFieldController.text;
 
   Future<Null> _handleRefresh() async {
     print('_MyHomePageState::_handleRefresh(): Refreshing...');
@@ -87,6 +140,9 @@ class _MyHomePageState extends State<MyHomePage> {
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
+        actions: <Widget>[
+          IconButton(icon: Icon(Icons.settings), onPressed: _pushSettings,)
+        ],
       ),
       body: Center(
         child: new RefreshIndicator(
@@ -114,13 +170,21 @@ class _MyHomePageState extends State<MyHomePage> {
                       'URL:\n' + url + "\n",
                       textAlign: TextAlign.center
                   ),
+                  Text(
+                    'Body:',
+                    textAlign: TextAlign.center,
+                  ),
                   FutureBuilder(
                     future: debug_body,
                     builder: (context, snapshot) {
                       if (snapshot.hasData) {
-                        return Text(
-                            "Body:\n" + snapshot.data,
-                            textAlign: TextAlign.center
+                        return Expanded(
+                          flex: 1,
+                          child: SingleChildScrollView(
+                            child: Text(
+                              snapshot.data
+                            ),
+                          ),
                         );
                       } else if (snapshot.hasError) {
                         return Text("${snapshot.error}");
